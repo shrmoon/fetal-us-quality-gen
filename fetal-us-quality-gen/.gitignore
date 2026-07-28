@@ -1,0 +1,19 @@
+# Data (never commit the dataset)
+data/Images/
+data/*.csv
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Results / checkpoints
+results/*.pt
+results/*.png
+results/*.log
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
