@@ -112,9 +112,7 @@ discussion of which classes/domains generalize worst.)*
 
 ## Why this project
 
-Built as hands-on preparation for a proposed Masters thesis on cross-domain
-generalization in deep learning-based fetal ultrasound image quality
-assessment, supervised interest: Prof. Brendan McCane, University of Otago.
+In many low-resource clinical settings, only one expert doctor may be available to review ultrasound scans, so pregnant women often face long waits outside the ultrasound room, and image quality issues sometimes lead to inaccurate or inconclusive results. This motivates my interest in AI tools that could help make fetal ultrasound image quality assessment more consistent and accessible in settings where specialist availability is limited.
 
 ## References
 
