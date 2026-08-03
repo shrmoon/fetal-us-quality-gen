@@ -6,22 +6,17 @@ This project does not include the dataset itself. Follow these steps:
    (Burgos-Artizzu et al., 2020 — FETAL_PLANES_DB)
 2. Unzip it so you end up with this structure inside `data/`:
 
-```
-data/
-├── FETAL_PLANES_DB_data.csv
-└── Images/
-    ├── Image1.png
-    ├── Image2.png
-    └── ...
-```
+3. **Note:** the CSV uses a **semicolon (`;`)** delimiter, not a comma —
+   `src/dataset.py` is already configured for this
+   (`pd.read_csv(csv_path, sep=";")`). If you're using a different release
+   of the dataset with a comma-delimited CSV, update that line accordingly.
 
-3. Confirm the CSV has (at least) these columns — the exact column names
-   in the original release are: `Image_name`, `Patient_num`, `Plane`,
-   `Brain_plane`, `Operator`, `US_Machine`, `Train`. If the version you
-   download has slightly different column names, update the column names
-   at the top of `src/dataset.py` to match.
+4. Confirmed columns in the release used for this project:
+   `Image_name`, `Patient_num`, `Plane`, `Brain_plane`, `Operator`,
+   `US_Machine`, `Train`. These match `src/dataset.py` exactly — no
+   changes needed if you're using the same Zenodo release.
 
-4. This folder (`data/`) is listed in `.gitignore` — do not commit the raw
-   images or CSV to GitHub. Only the code should be pushed; the dataset
-   stays local, both for repo size reasons and to respect the dataset's
-   distribution terms.
+5. This folder (`data/`) is listed in `.gitignore` — the raw images and
+   CSV are intentionally excluded from version control, both for repo
+   size and to respect the dataset's distribution terms. Only code is
+   tracked here.

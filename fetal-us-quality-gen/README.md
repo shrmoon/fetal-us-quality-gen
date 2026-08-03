@@ -95,9 +95,32 @@ python src/evaluate.py --data_dir data/ --checkpoint results/best_model.pt
 
 ## Results
 
-*(To be filled in after training — report ID accuracy, OOD accuracy, and
-the generalization gap here, ideally with a confusion matrix and a short
-discussion of which classes/domains generalize worst.)*
+Training was run for 15 epochs on a ResNet18 backbone, holding out one
+ultrasound machine entirely as the out-of-distribution (OOD) test set.
+
+| Metric | Accuracy |
+|---|---|
+| Training (final epoch) | 99.3% |
+| In-distribution validation (best) | 96.5% |
+| Out-of-distribution (held-out machine) | 94.7% |
+| **Generalization gap** | **1.7 points** |
+
+![Generalization gap](results/generalization_gap.png)
+
+The generalization gap for this held-out machine was modest, suggesting
+the model's learned features transfer reasonably well across at least this
+domain shift. However, overall accuracy can mask per-class differences —
+some classes (e.g. "Other") showed noticeably weaker precision than the
+overall accuracy suggests, indicating that specific anatomical categories
+may be more vulnerable to domain shift than others even when aggregate
+accuracy looks strong.
+
+This result is a useful but limited signal: FETAL_PLANES_DB was collected
+across only two hospitals, so the diversity of machines/settings is
+narrower than a true cross-country domain shift (e.g. testing on real
+low-resource clinical data). A small gap here does not rule out much
+larger generalization failures under more extreme distribution shifts,
+which is the open question I aim to investigate further in my proposed thesis.
 
 ## Limitations
 
@@ -112,9 +135,7 @@ discussion of which classes/domains generalize worst.)*
 
 ## Why this project
 
-Built as hands-on preparation for a proposed Masters thesis on cross-domain
-generalization in deep learning-based fetal ultrasound image quality
-assessment, supervised interest: Prof. Brendan McCane, University of Otago.
+In many low-resource clinical settings, only one expert doctor may be available to review ultrasound scans, so pregnant women often face long waits outside the ultrasound room, and image quality issues sometimes lead to inaccurate or inconclusive results. This motivates my interest in AI tools that could help make fetal ultrasound image quality assessment more consistent and accessible in settings where specialist availability is limited.
 
 ## References
 

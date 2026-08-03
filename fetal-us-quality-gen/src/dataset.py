@@ -39,7 +39,7 @@ class FetalPlanesDataset(Dataset):
         self.images_dir = images_dir
         self.transform = transform
 
-        df = pd.read_csv(csv_path)
+        df = pd.read_csv(csv_path, sep=";")
 
         # Build label mapping from the Plane column
         self.classes = sorted(df[COL_PLANE].dropna().unique().tolist())

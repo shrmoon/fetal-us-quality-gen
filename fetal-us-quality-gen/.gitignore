@@ -1,4 +1,4 @@
-# Data (never commit the dataset)
+# Data
 data/Images/
 data/*.csv
 
