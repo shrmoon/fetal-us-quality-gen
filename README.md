@@ -105,7 +105,7 @@ ultrasound machine entirely as the out-of-distribution (OOD) test set.
 | Out-of-distribution (held-out machine) | 94.7% |
 | **Generalization gap** | **1.7 points** |
 
-![Generalization gap](results/generalization_gap.png)
+![Generalization gap](fetal-us-quality-gen/results/generalization_gap.png)
 
 The generalization gap for this held-out machine was modest, suggesting
 the model's learned features transfer reasonably well across at least this
