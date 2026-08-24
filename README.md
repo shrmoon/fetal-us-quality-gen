@@ -1,11 +1,8 @@
 # Fetal Ultrasound Plane Classification: A Cross-Domain Generalization Study for Low-Resource Clinical Settings
 
-A research study applying deep learning to fetal ultrasound
+A small scoped research study applying deep learning to fetal ultrasound
 image classification, with a specific focus on measuring how well models
-generalize across different ultrasound machines and operators. This
-project is a hands-on precursor to my proposed Masters thesis on
-cross-domain generalization in deep learning-based fetal ultrasound image
-quality assessment.
+generalize across different ultrasound machines and operators. This project reflects my personal research interest in cross-domain generalization for deep learning-based fetal ultrasound image quality assessment.
 
 ## Motivation
 
@@ -55,8 +52,7 @@ that operates on it — in line with the original dataset's terms of use.
 
 This ID/OOD split design is a small-scale version of the evaluation
 approach used in published work on fetal ultrasound generalization to
-low-resource settings (see Related Work), and is the same core question I
-plan to explore in more depth in my Masters thesis.
+low-resource settings (see Related Work), and reflects the kind of question I'm interested in exploring further.
 
 ## Related Work
 
