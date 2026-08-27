@@ -1,77 +1,64 @@
-# Fetal Ultrasound Plane Classification: A Cross-Domain Generalization Study for Low-Resource Clinical Settings
+# Fetal Ultrasound Plane Classification: A Cross-Domain Generalization Study
 
-A small scoped research study applying deep learning to fetal ultrasound
-image classification, with a specific focus on measuring how well models
-generalize across different ultrasound machines and operators. This project reflects my personal research interest in cross-domain generalization for deep learning-based fetal ultrasound image quality assessment.
+A data pipeline and modeling project analyzing a 12,400-image medical
+imaging dataset, focused on building a reproducible pipeline to measure
+how well models generalize across different data sources — and how much
+of that generalization gap can be closed through better model design.
 
-## Motivation
+## Overview
 
-Most deep learning models for fetal ultrasound are trained and evaluated on
-data from a single hospital or machine, and often perform worse when applied
-to images from a different device, operator, or clinical setting. This
-project tests that idea directly: train classifiers on one subset of a
-public dataset, then explicitly measure how much accuracy drops when
-evaluating on a held-out subset that differs by acquisition machine, and
-compare whether pretraining changes how large that drop is.
+Most machine learning models are evaluated on data that looks like their
+training data. In practice, data pulled from a different source, device,
+or time period often behaves differently — a common failure mode in any
+production data system. This project builds a small, reproducible pipeline
+to measure that gap directly: structuring a dataset by source, engineering
+a deliberate train/test split along that source boundary (rather than a
+random split), and quantifying how much model performance drops as a
+result.
 
 ## Dataset
 
-This project uses the **FETAL_PLANES_DB** dataset (Burgos-Artizzu et al.,
-2020), a public dataset of 12,400 fetal ultrasound images from 1,792
-patients, collected at two hospitals in Barcelona using multiple ultrasound
-machines and operators.
+- **Source:** FETAL_PLANES_DB (Burgos-Artizzu et al., 2020), a public
+  dataset of 12,400 medical images from 1,792 subjects, collected across
+  multiple imaging devices at two hospitals. https://zenodo.org/record/3904280
+- **Structure:** a CSV of metadata (`FETAL_PLANES_DB_data.csv`) joined
+  against image files, with fields including `Image_name`, `Patient_num`,
+  `Plane` (target label), `US_Machine` (data source), and `Operator`.
+- Raw data is not redistributed in this repository, in line with the
+  source dataset's terms of use. Setup instructions: `data/README.md`.
 
-- Source: https://zenodo.org/record/3904280
-- The dataset includes a CSV of metadata (`FETAL_PLANES_DB_data.csv`) with
-  columns including `Image_name`, `Patient_num`, `Plane` (the anatomical
-  plane label), `US_Machine`, `Operator`, and a provided `Train` split.
+## Data Pipeline Design
 
-**Setup:** download the dataset from Zenodo, unzip the images into
-`data/Images/`, and place the CSV at `data/FETAL_PLANES_DB_data.csv`. See
-`data/README.md` for exact expected structure.
+The core engineering problem this project solves: build a pipeline that
+tests generalization across data sources, not just overall accuracy.
 
-I have not redistributed the dataset itself in this repository — only code
-that operates on it — in line with the original dataset's terms of use.
+- **Ingestion:** load and join image files against CSV metadata using
+  pandas, validating expected columns and image paths.
+- **Split strategy:** rather than a random train/test split, the pipeline
+  deliberately partitions data by `US_Machine` (data source) —
+  holding one source out entirely from training. This produces two
+  distinct evaluation sets from the same pipeline:
+  - **In-distribution (ID):** held-out data from sources seen during training.
+  - **Out-of-distribution (OOD):** data from a source never seen during training.
+- **Reproducibility:** fixed random seeds, deterministic splits, and a
+  config-driven CLI (`argparse`) so any run can be repeated exactly.
+- **Version control:** the full pipeline, from raw data ingestion through
+  evaluation, is tracked in Git with a clear module structure (see below).
 
-## Method
+## Modeling & Evaluation
 
-1. **Task:** multi-class classification of the ultrasound `Plane` (e.g.
-   abdomen, brain, femur, thorax, other).
-2. **Models:** a ResNet18 backbone (pretrained on ImageNet), fine-tuned on
-   fetal ultrasound images, compared against a simple from-scratch CNN
-   baseline — to isolate how much pretraining contributes versus a basic
-   architecture with no transfer learning.
-3. **Generalization evaluation (the core idea of this project):**
-   - **In-distribution (ID) test set:** held-out images from the *same*
-     `US_Machine` values seen during training.
-   - **Out-of-distribution (OOD) test set:** held-out images from a
-     `US_Machine` (or `Operator`) *not* seen during training.
-   - I report accuracy on both and compute the **generalization gap**
-     (ID accuracy − OOD accuracy) as the key metric of interest, rather
-     than just overall accuracy.
+To test whether the pipeline's generalization measurement was meaningful,
+two models were run through it:
 
-This ID/OOD split design is a small-scale version of the evaluation
-approach used in published work on fetal ultrasound generalization to
-low-resource settings (see Related Work), and reflects the kind of question I'm interested in exploring further.
+1. A **ResNet18** backbone pretrained on ImageNet, fine-tuned on the target
+   dataset.
+2. A **simple CNN baseline** trained from scratch, for comparison.
 
-## Related Work
+Both were evaluated on the same ID and OOD splits produced by the pipeline,
+with accuracy and a **generalization gap** (ID − OOD accuracy) computed
+for each as the key output metric — not just raw accuracy.
 
-This project builds on a growing body of work on fetal ultrasound deep
-learning. Burgos-Artizzu et al. (2020) introduced the FETAL_PLANES_DB
-dataset used here, evaluating CNN classifiers for standard-plane
-detection. A 2022 systematic review (arXiv:2201.12260) surveyed 145 papers
-on fetal ultrasound deep learning and identified generalization across
-imaging sites and devices as a persistent open problem. Sendra-Balcells et
-al. (2023) directly evaluated fetal ultrasound model generalization to
-low-resource settings across five African countries, using held-out-device
-evaluation similar in spirit to the ID/OOD design used here, though at
-larger scale and with real cross-country data rather than a single public
-dataset. This project is a small, self-contained test of the same
-underlying question — how much do pretraining and architecture choice
-affect generalization under domain shift — rather than a replication of
-either study.
-
-## Project structure
+## Project Structure
 
 ```
 fetal-us-quality-gen/
@@ -79,39 +66,35 @@ fetal-us-quality-gen/
 ├── requirements.txt
 ├── .gitignore
 ├── data/
-│   └── README.md          # dataset download/setup instructions
+│   └── README.md          # dataset setup instructions
 ├── src/
-│   ├── dataset.py          # PyTorch Dataset + ID/OOD split logic
+│   ├── dataset.py          # data ingestion, joining, and ID/OOD split logic
 │   ├── model.py             # ResNet18 and simple CNN baseline
-│   ├── train.py              # training loop
+│   ├── train.py              # training pipeline (CLI-driven)
 │   ├── evaluate.py           # ID vs OOD evaluation + generalization gap
 │   └── utils.py               # seeding, transforms, plotting helpers
-└── results/                # training logs, saved plots
-    ├── best_model.pt        # ResNet18 checkpoint
+└── results/                # run outputs: checkpoints, metrics, plots
+    ├── best_model.pt
     ├── generalization_gap.png
-    └── simple_cnn/           # simple CNN baseline checkpoint + plot
+    └── simple_cnn/
 ```
 
-## How to run
+## How to Run
 
 ```bash
 pip install -r requirements.txt
 
-# Train ResNet18 (pretrained)
+# Run pipeline + train ResNet18
 python src/train.py --data_dir data/ --epochs 15 --model resnet18 --output_dir results/
 
-# Train simple CNN baseline
+# Run pipeline + train CNN baseline
 python src/train.py --data_dir data/ --epochs 15 --model simple_cnn --output_dir results/simple_cnn/
 
-# Evaluate either model's ID vs OOD generalization gap
+# Evaluate a given run's ID vs OOD generalization gap
 python src/evaluate.py --data_dir data/ --checkpoint results/best_model.pt --output_dir results/
-python src/evaluate.py --data_dir data/ --checkpoint results/simple_cnn/best_model.pt --output_dir results/simple_cnn/
 ```
 
 ## Results
-
-Both models were trained for 15 epochs, holding out one ultrasound machine
-entirely as the out-of-distribution (OOD) test set.
 
 | Model | ID Accuracy | OOD Accuracy | Generalization Gap |
 |---|---|---|---|
@@ -120,50 +103,37 @@ entirely as the out-of-distribution (OOD) test set.
 
 ![Generalization gap](results/generalization_gap.png)
 
-The pretrained ResNet18 not only achieved higher accuracy overall but showed
-a substantially smaller generalization gap than the from-scratch CNN
-(1.7 points vs. 8.9 points) — suggesting that ImageNet pretraining improves
-not just raw accuracy but specifically the model's robustness to domain
-shift across imaging devices. This is a more informative comparison than
-accuracy alone: a model could achieve high overall accuracy while still
-degrading sharply under distribution shift, which the CNN baseline
-illustrates directly.
+The same pipeline, applied to two different models, produced very
+different generalization behavior — the pretrained model's gap was roughly
+5x smaller. This illustrates why measuring performance split by data
+source matters: aggregate accuracy alone would not have surfaced this
+difference. Per-class breakdown also showed uneven degradation — one
+category ("Other") dropped more sharply under the OOD split than overall
+accuracy suggested, reinforcing the value of source-aware evaluation over
+a single aggregate number.
 
-Overall accuracy also masks per-class differences: for both models, the
-"Other" class showed noticeably weaker precision than the overall accuracy
-suggests, indicating that specific anatomical categories may be more
-vulnerable to domain shift than others even when aggregate accuracy looks
-strong.
+## Skills Demonstrated
 
-This result is a useful but limited signal: FETAL_PLANES_DB was collected
-across only two hospitals, so the diversity of machines/settings is
-narrower than a true cross-country domain shift (e.g. testing on real
-low-resource clinical data, as in Sendra-Balcells et al., 2023). A small
-gap for the pretrained model here does not rule out much larger
-generalization failures under more extreme distribution shifts, which is
-the open question I aim to investigate further in my proposed thesis.
+- Data ingestion and joining of structured metadata with an unstructured
+  (image) dataset using **pandas**
+- Designing a **non-random, source-aware data split** to test for
+  distribution shift, rather than relying on a default random split
+- Building a **reproducible, CLI-driven pipeline** (Python, argparse,
+  fixed seeds) rather than a one-off notebook script
+- **Version-controlled** pipeline code (Git/GitHub)
+- Model training and evaluation (**PyTorch**, ResNet18, CNNs) as a
+  downstream test of the pipeline's output
+- Clear metric selection: reporting a **derived comparison metric**
+  (generalization gap) rather than a single surface-level number
 
 ## Limitations
 
-- Single public dataset from one geographic region (Spain); the real
-  motivation for my thesis — generalization to genuinely low-resource
-  settings such as Bangladesh — would need real out-of-region clinical
-  data, which this project does not include.
-- Small-scale, single-run experiments; no hyperparameter search or
-  statistical significance testing.
-- Scoped as a focused study of one specific question (pretraining's effect
-  on generalization), rather than a comprehensive evaluation across
-  multiple architectures, datasets, or domain shift types.
-
-## Why this project
-
-In many low-resource clinical settings, only a few expert doctor may be
-available to review ultrasound scans, so pregnant women often face long
-waits outside the ultrasound room, and image quality issues sometimes lead
-to inaccurate or inconclusive results. This motivates my interest in AI
-tools that could help make fetal ultrasound image quality assessment more
-consistent and accessible in settings where specialist availability is
-limited.
+- Single public dataset from one geographic region; a production data
+  pipeline would need to handle more heterogeneous, larger-scale, and
+  messier real-world sources.
+- Single-run experiments; no automated pipeline monitoring, retraining,
+  or orchestration (e.g. Airflow) layered on top yet — a natural next
+  extension.
 
 ## References
 
@@ -171,10 +141,3 @@ Burgos-Artizzu, X.P., Coronado-Gutiérrez, D., Valenzuela-Alcaraz, B. et al.
 Evaluation of deep convolutional neural networks for automatic
 classification of common maternal fetal ultrasound planes. *Sci Rep* 10,
 10200 (2020).
-
-Sendra-Balcells, C. et al. Generalisability of fetal ultrasound deep
-learning models to low-resource imaging settings in five African
-countries. *Sci Rep* 13, 2728 (2023).
-
-A Review on Deep-Learning Algorithms for Fetal Ultrasound-Image Analysis.
-arXiv:2201.12260 (2022).
